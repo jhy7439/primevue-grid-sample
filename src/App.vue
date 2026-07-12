@@ -201,14 +201,23 @@ const parkingLots = ref([
   },
 ])
 
+// parkingLots는 API 응답처럼 주차장 정보와 상세 구역 정보가 한 줄에 같이 있는 평평한 배열입니다.
+// 화면의 v-expansion-panel은 주차장 하나당 패널 하나가 필요하므로, 같은 id를 가진 행들을 하나로 묶어
+// { id, name, available, total, isFull, details: [...] } 형태의 화면 전용 데이터로 변환합니다.
 const groupedParkingLots = computed(() => {
+  // Map은 key(id) 기준으로 데이터를 빠르게 찾고 누적하기 좋습니다.
+  // 예: groups.get('hwaseong')은 화성사업장 패널 데이터를 가리킵니다.
   const groups = new Map()
 
   parkingLots.value.forEach((parking) => {
+    // 같은 주차장 id가 처음 등장한 경우에만 패널 제목에 표시할 상위 정보를 생성합니다.
+    // 이후 같은 id가 다시 나오면 이 블록은 건너뛰고 details에 상세 구역만 추가됩니다.
     if (!groups.has(parking.id)) {
       groups.set(parking.id, {
         id: parking.id,
         name: parking.name,
+        // lotAvailable/lotTotal은 패널 제목에 표시되는 주차장 전체 가능/총 주차대수입니다.
+        // 상세 행의 available/total과 이름이 겹치지 않도록 데이터에서 키를 분리했습니다.
         available: parking.lotAvailable,
         total: parking.lotTotal,
         isFull: parking.lotAvailable === 0,
@@ -216,6 +225,8 @@ const groupedParkingLots = computed(() => {
       })
     }
 
+    // 현재 행의 area/floor/available/total은 패널 내부 목록에 표시할 상세 주차장 정보입니다.
+    // 같은 id를 가진 행들이 같은 details 배열 안에 차곡차곡 쌓입니다.
     groups.get(parking.id).details.push({
       area: parking.area,
       floor: parking.floor,
@@ -224,6 +235,7 @@ const groupedParkingLots = computed(() => {
     })
   })
 
+  // template의 v-for는 배열을 순회하므로 Map의 value들만 배열로 변환해서 반환합니다.
   return Array.from(groups.values())
 })
 
