@@ -2,7 +2,8 @@
   <SourceViewer v-if="isSourceView" />
   <v-app>
     <v-main v-if="!isSourceView">
-      <div class="page-shell">
+      <SchPage v-if="isSchPage" @go-home="goHome" />
+      <div v-else class="page-shell">
         <header class="hero">
           <div>
             <span class="eyebrow">PRIMEVUE DATATABLE</span>
@@ -11,6 +12,9 @@
           </div>
 
           <div class="header-actions">
+            <v-btn variant="tonal" prepend-icon="mdi-calendar-search" size="large" @click="goToSchPage">
+              SCH 페이지
+            </v-btn>
             <v-btn variant="outlined" prepend-icon="mdi-plus" size="large" @click="addRow">
               행 추가
             </v-btn>
@@ -98,11 +102,41 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import CommonTable from './components/CommonTable.vue'
 import SourceViewer from './components/SourceViewer.vue'
+import SchPage from './page/schPage.vue'
 
-const isSourceView = window.location.pathname === '/source'
+const currentPath = ref(window.location.pathname)
+const isSourceView = computed(() => currentPath.value === '/source')
+const isSchPage = computed(() => currentPath.value === '/schPage')
+
+function syncPath() {
+  currentPath.value = window.location.pathname
+}
+
+function movePage(path) {
+  if (window.location.pathname === path) return
+
+  window.history.pushState({}, '', path)
+  syncPath()
+}
+
+function goHome() {
+  movePage('/')
+}
+
+function goToSchPage() {
+  movePage('/schPage')
+}
+
+onMounted(() => {
+  window.addEventListener('popstate', syncPath)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', syncPath)
+})
 
 const columns = [
   { field: 'id', header: '번호' },
